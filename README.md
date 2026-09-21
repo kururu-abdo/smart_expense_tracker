@@ -1,80 +1,141 @@
-# بيّنة | Bayyinah
+# Masar · مسار
 
-**مستشار محلي للفواتير والمصاريف السعودية — Kotlin + Jetpack Compose + Edge AI.**
+A smart expense tracker built with **Flutter + Riverpod** and **FastAPI + SQLAlchemy**, in Arabic and English.
 
-تطبيق Android عربي يقرأ صور الفواتير وQR، يعرض البيانات للمراجعة، ثم يحتفظ بالمصاريف على الهاتف. يدعم تصنيفاً محلياً واقتراحات نموذج لغوي، وبحثاً دلالياً متعدد اللغات عبر SQLite-vec.
+An animated teal-and-cream interface, a dark theme, exact money calculations, monthly budgets, and RevenueCat subscriptions. Includes Android, iOS, and web projects. Web is also useful for exploring the interface; subscription checkout is enabled on iOS and Android.
 
-> حالة التسليم: كود مصدر لم يُبنَ ولم يُشغَّل على هاتف أو محاكي. الاختبارات مرفقة ولم تُنفّذ. GitHub Actions يدوي فقط، ولا يعمل عند push. لا يوجد APK مُختبَر في هذا التسليم.
+> This branch implements the Flutter/FastAPI app requested in this conversation. The repository's original Kotlin/Bayyinah README is preserved in [BAYYINAH_REFERENCE.md](docs/BAYYINAH_REFERENCE.md); its feature claims describe a separate project, not this implementation.
 
-## ما يتضمنه المشروع
+## Preview
 
-- واجهة عربية RTL، تصميم أخضر داكن وذهبي، ومظهر فاتح/داكن حسب النظام.
-- لوحة مصاريف للشهر أو كامل السجل، إجماليات بالهللات، توزيع حسب التصنيف، وآخر الفواتير.
-- التقاط صورة عبر تطبيق الكاميرا أو استيراد صورة؛ لا حاجة لصلاحية قراءة جميع الصور.
-- OCR عربي/إنجليزي محلي. ملفات Tesseract `ara+eng` مضمّنة، ونماذج ML Kit مضمّنة عبر الاعتماد المباشر.
-- قراءة ZATCA Base64/TLV مع احترام طول UTF-8 بالبايت، وقراءة الحقول المشفّرة كبايتات.
-- مراجعة وتصحيح البيانات، حفظ مسودة تلقائي، وكشف تكرار QR أو نفس ملف الصورة.
-- قواعد تدقيق حتمية: البيانات الأساسية، التاريخ، حدود المبالغ، التطابق مع QR، وحقول المرحلة الثانية حسب النوع الذي يختاره المستخدم.
-- MediaPipe LLM Inference لاقتراح تصنيف وملخص وحقول؛ لا تُطبَّق الاقتراحات إلا باختيار المستخدم، ولا تستبدل الحقول المعبأة.
-- بحث نصي، وبحث دلالي عربي/إنجليزي حقيقي باستخدام نموذج embeddings منفصل وSQLite-vec عبر JNI.
-- تصدير CSV مع حماية الخلايا النصية من حقن صيغ الجداول.
-- حفظ Room داخلي، صور داخل مساحة التطبيق، تعطيل النسخ الاحتياطي، وإزالة إذن الإنترنت من الـ manifest.
+<img src="docs/screenshots/dashboard-en.png" width="260" alt="English dashboard" /> <img src="docs/screenshots/dashboard-ar.png" width="260" alt="Arabic RTL dashboard" />
 
-## تصحيح الافتراضات التقنية
+## Features
 
-1. **ML Kit Text Recognition لا يدعم الخط العربي.** نستخدم Tesseract4Android للعربية وML Kit للاتينية وQR. راجع [قائمة Google الرسمية](https://developers.google.com/ml-kit/vision/text-recognition/v2/languages).
-2. **MediaPipe LLM Inference أصبح في وضع الصيانة.** أبقيناه لتوافق المتطلبات، خلف واجهة قابلة للاستبدال. النموذج الموثق هو **Gemma 3 1B بصيغة `.task` المتوافقة**؛ ليست أي ملفات Gemma أو Llama أو GGUF قابلة للتحميل مباشرة. توصي Google بالانتقال إلى LiteRT-LM مستقبلاً. [دليل Android](https://developers.google.com/edge/mediapipe/solutions/genai/llm_inference/android).
-3. **SQLite-vec لا يُنشئ embeddings بنفسه.** يُرفق مصدره ويُربط مع SQLite خاص عبر JNI؛ نموذج البحث هو DistilUSE متعدد اللغات، مع ONNX Runtime على الهاتف. لا نحاول تحميل الامتداد في اتصال Room/SQLite الخاص بالنظام.
-4. **لا توجد رسوم استدلال سحابي لهذا التطبيق.** لكن وصف كل المكونات بأنها مفتوحة المصدر بالكامل غير دقيق: ML Kit له شروط Google، وأوزان Gemma لها ترخيصها. راجع [التراخيص](docs/THIRD_PARTY.md).
+| Feature | Free | Premium |
+| --- | --- | --- |
+| Income and expense tracking, editing, deletion | ✓ | ✓ |
+| Monthly overview, category filters and search | ✓ | ✓ |
+| English/Arabic smart text suggestions | ✓ | ✓ |
+| Arabic RTL, English, light/dark theme | ✓ | ✓ |
+| Category budgets per month | 3 | Unlimited |
+| Category breakdown and spending projections | — | ✓ |
+| CSV export through share/download sheet | — | ✓ |
 
-## نطاق ZATCA
+All premium endpoints enforce access on the server. Demo mode uses temporary sample data, never real account records. Smart entry and spending insights use transparent rules and arithmetic; no LLM key or external AI service is required.
 
-هذا **مدقق محلي مساعد** وليس نظام إصدار أو إرسال فواتير إلى منصة فاتورة، وليس حاصلاً على اعتماد ZATCA. فحص شكل QR لا يثبت صحة التوقيع أو قبول الهيئة. لا يُعد النص المستخرج أو النموذج اللغوي دليلاً محاسبياً.
+## Quick start
 
-لا نتحقق من XML/UBL أو XAdES أو سلسلة الشهادات وإبطالها. لا نتحقق من التسجيل الضريبي عبر الشبكة. لا نفترض نسبة ضريبة واحدة على فاتورة قد تضم توريدات مختلطة، ولا نعتبر مجموع VAT ضريبة قابلة للاسترداد. [تفصيل نطاق التدقيق ومصدره الرسمي](docs/ZATCA_SCOPE.md).
+Requirements: Python 3.12+, Flutter 3.35.4 / Dart 3.9.2 or a compatible stable SDK, and the relevant platform SDK. Dependencies resolve into `mobile/pubspec.lock`; CI uses the tested Flutter version.
 
-## فتح المشروع لاحقاً
-
-المتطلبات: Android Studio يدعم AGP 8.9، JDK 17، Android SDK 35، NDK `28.0.13004108`، وCMake `3.22.1`. التطبيق يدعم Android 8+، مع ABIs `arm64-v8a` و`x86_64`. استخدم هاتف ARM64 فعلياً عند اختبار LLM؛ ليست المحاكيات هدفاً موثوقاً للاستدلال.
-
-1. افتح المجلد في Android Studio.
-2. ثبّت SDK/NDK/CMake من SDK Manager. سيجلب Gradle المكتبات عند المزامنة لأول مرة.
-3. عندما تقرر البناء والاختبار لاحقاً:
+### 1. Backend
 
 ```bash
-./gradlew :domain:test :app:lintDebug :app:assembleDebug
+python3 scripts/init_env.py
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+alembic upgrade head
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-لم تُنفّذ هذه الأوامر أثناء إعداد المشروع. مجلد `gradle/wrapper` يتضمن JAR الرسمي، ومصادر SQLite وSQLite-vec وبيانات OCR مضمّنة. لا يلزم تشغيل خادم.
+`init_env.py` creates `backend/.env` with a fresh signing secret and leaves an existing file untouched. Local development uses SQLite and needs no Docker. API documentation: `http://localhost:8000/docs`.
 
-## تفعيل الذكاء المحلي
+For PostgreSQL, set `DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:5432/masar` in `.env`, then run `alembic upgrade head`. Production requires PostgreSQL, HTTPS, and explicit CORS origins.
 
-قراءة الفاتورة، QR، التدقيق، الإدخال اليدوي، الأرشفة والبحث النصي لا تتطلب نموذج LLM. نموذج اللغة ونموذج البحث الكبير غير مضمّنين في Git.
+### 2. Flutter
 
-- التحليل: نزّل حزمة Gemma 3 1B المتوافقة مع MediaPipe من الرابط الرسمي في [دليل النماذج](docs/MODELS.md)، وفق ترخيصها، ثم استورد `.task` من الإعدادات.
-- البحث بالمعنى: جهّز `embedding.onnx` و`vocab.txt` بالأداة المرفقة على حاسوبك، استوردهما، ثم اختر **إعادة بناء البحث الدلالي**.
-- يُقفل البحث الدلالي عند تغيّر عدد السجلات أو هوية النموذج حتى تُعاد الفهرسة، لمنع إرجاع أرشيف ناقص بصمت. البحث النصي يظل متاحاً.
-- الاستيراد عبر منتقي الملفات؛ قد يختار المستخدم مزود ملفات سحابياً لتنزيل الملف. التطبيق نفسه لا يرسل الصور أو المصاريف إليه.
+```bash
+cd mobile
+flutter pub get
+cp config.example.json config.json
+flutter run --dart-define-from-file=config.json
+```
 
-## البنية
+Set `API_BASE_URL` in `config.json`:
 
-| الوحدة | المسؤولية |
-|---|---|
-| `app` | Compose، ViewModel، حالة الواجهة، التنقل، مراجعة الاقتراحات |
-| `domain` | النماذج والعقود، TLV، المبالغ، التدقيق، القواعد، WordPiece |
-| `data` | Room، OCR، معالجة الصور، استيراد النماذج، MediaPipe وONNX، Repository |
-| `vector` | SQLite مستقل + sqlite-vec + JNI، حساب cosine، معاملات إعادة الفهرسة |
+| Device | Local API URL |
+| --- | --- |
+| Android emulator | `http://10.0.2.2:8000/api/v1` |
+| iOS simulator / local web | `http://localhost:8000/api/v1` |
+| Physical device | HTTPS development endpoint or your computer's LAN address on the same network |
+| Release app | Your deployed HTTPS API ending in `/api/v1` |
 
-[شرح المعمارية](docs/ARCHITECTURE.md) · [إعداد النماذج](docs/MODELS.md) · [حالة التحقق](docs/VALIDATION.md)
+Android debug builds allow local HTTP. Release builds require HTTPS in Dart and do not enable cleartext traffic. On iOS, use an HTTPS development endpoint if ATS blocks local HTTP; do not disable ATS globally for release.
 
-## حدود الإصدار الحالي
+Use **Explore the demo** for a working UI without a backend. Demo records reset when you leave. Authenticated use requires a network connection; offline writes/sync are not implemented.
 
-- يستورد الصور، ولا يعالج PDF أو ملفات XML.
-- يدعم مصاريف SAR ذات الإجمالي الموجب؛ لا يدعم إشعارات الدائن أو التحويل بين العملات.
-- السجلات المحفوظة غير قابلة للتعديل في هذا الإصدار؛ يمكن حذف سجل وإعادة إدخاله. المسودات قابلة للتعديل.
-- بحث المتجهات يفحص متجهات الأرشيف المطابقة للنموذج؛ مناسب للأرشيف الشخصي. الأرشيف الضخم يحتاج قياس أداء وفهرسة/تقسيم إضافيين.
-- لا توجد مزامنة أو استعادة نسخ احتياطية. إلغاء تثبيت التطبيق يزيل البيانات. CSV ليس نسخة كاملة للصور.
-- لا يوجد تشفير SQLCipher أو قفل بيومتري خاص بالتطبيق؛ الحماية هي مساحة Android الخاصة وحماية الجهاز. لا يُسوَّق التخزين بوصفه قاعدة بيانات مشفرة بمفتاح مستقل.
-- ملفات `.task` و`.onnx` تحتاج اختباراً على الهاتف المستهدف؛ حجم النموذج وRAM والحرارة تؤثر في الأداء.
+For a browser preview:
 
-الكود الأصلي: MIT. حقوق المكونات والنماذج الخارجية محفوظة لأصحابها.
+```bash
+flutter run -d chrome --web-port 8080 --dart-define-from-file=config.json
+```
+
+### 3. RevenueCat
+
+Read [the full RevenueCat setup](docs/REVENUECAT.md). The app runs without purchase keys; checkout stays unavailable until configured.
+
+1. Add iOS and Android apps to your RevenueCat project using your actual bundle/package IDs.
+2. Create monthly/yearly subscription products in the stores and import them into RevenueCat.
+3. Attach the products to entitlement **`premium`** and a current offering.
+4. Add **public** iOS/Android SDK keys and your published privacy/terms URLs to `mobile/config.json`.
+5. Add the secret server key and webhook authorization value to `backend/.env`.
+6. Point RevenueCat's webhook at `https://YOUR_API/api/v1/billing/webhook`.
+7. Test purchases, restore, cancellation, expiration and account switching in sandbox before release.
+
+The authenticated backend UUID is the RevenueCat app user ID. The client never sends a trusted `premium=true` value. Prices come directly from store offerings.
+
+## Architecture
+
+```text
+mobile/lib/
+  core/          models, API client, repositories, controller, billing, theme, localization
+  features/      auth, overview, activity, expense editor, budgets, insights, paywall, settings
+backend/
+  app/routers/   auth, expenses, billing
+  app/services/  exact-money summaries, smart parsing, RevenueCat verification
+  alembic/       versioned SQL migrations
+  tests/         authentication, ownership, accounting and billing tests
+```
+
+The Riverpod controller acts as a view model over repository contracts. Widgets never call HTTP directly. The remote repository and in-memory demo repository implement the same contract.
+
+- Money is stored as integer minor units. Supported account currencies are SAR, USD, AED, EGP (2 decimal places). Account currency is fixed; no mixed-currency summing or exchange-rate conversion.
+- Auth uses Argon2 passwords, short-lived JWT access tokens, hashed rotating refresh tokens, session revocation, and token-family revocation on replay.
+- Transactions carry a per-account UUID idempotency key, preventing duplicate creates on retry.
+- Every data query is scoped to the authenticated user. PostgreSQL row locks serialize quota checks and subscription refreshes.
+- Webhooks authenticate, optionally verify HMAC, deduplicate event IDs, and reconcile canonical subscriber status including transfers.
+- Financial CSV cells are escaped against spreadsheet formula injection.
+
+See [API and operations](docs/OPERATIONS.md) for endpoints, security boundaries, and release steps.
+
+## Checks
+
+```bash
+cd backend
+pytest -q
+ruff check app tests alembic
+alembic upgrade head
+alembic check
+
+cd ../mobile
+flutter analyze
+flutter test
+flutter build web --dart-define=API_BASE_URL=https://api.example.com/api/v1
+```
+
+To regenerate actual Flutter UI screenshots:
+
+```bash
+cd mobile
+flutter test test/app_test.dart --dart-define=CAPTURE_SCREENSHOTS=true
+```
+
+CI checks Python tests, SQLite/PostgreSQL migrations, Dart analysis, Flutter widget/unit tests, and web compilation. Android/iOS store purchases need physical-device/store sandbox validation and your signing credentials.
+
+See [validation results and remaining device checks](docs/VALIDATION.md).
+
+## Scope of this version
+
+This is a functional v1 implementation. Before public launch, configure deployment, store products and signing, publish your legal pages, add operational monitoring/backups and production rate limits, and complete device purchase testing. Password recovery/email verification, bank feeds, receipt OCR, recurring transactions, offline synchronization and LLM-based coaching are future extensions.
